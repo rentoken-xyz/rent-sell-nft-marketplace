@@ -1,0 +1,18 @@
+{
+    "title": "Asset Metadata",
+    "type": "object",
+    "properties": {
+        "name": {
+            "type": "string",
+            "description": "Madame Tussauds Museum ticket"
+        },
+        "description": {
+            "type": "string",
+            "description": "Your ticket to visit the Madame Tussauds museum"
+        },
+        "image": {
+            "type": "string",
+            "description": "https://imgs.search.brave.com/_l4fh_8Sbp8CX9feFJs03RtWUFui5uQHZ4XdQIe60fw/rs:fit:669:446:1/g:ce/aHR0cHM6Ly93d3cu/ZXNxdWlyZW1lLmNv/bS9wdWJsaWMvaW1h/Z2VzLzIwMTkvMDYv/MDIvYWUuanBn"
+        }
+    }
+}

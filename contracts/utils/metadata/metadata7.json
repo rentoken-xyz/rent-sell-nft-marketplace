@@ -1,0 +1,18 @@
+{
+    "title": "Asset Metadata",
+    "type": "object",
+    "properties": {
+        "name": {
+            "type": "string",
+            "description": "Summary meme"
+        },
+        "description": {
+            "type": "string",
+            "description": "A summary of our last 3 nights lol"
+        },
+        "image": {
+            "type": "string",
+            "description": "https://imgs.search.brave.com/4LHoCvxmRSvJhjR0Al7yALtBglgka7PtFFtfIfuQ8TM/rs:fit:570:800:1/g:ce/aHR0cHM6Ly93d3cu/Y3J5cHRvY3VycmVu/Y3lrYi5jb20vd3At/Y29udGVudC91cGxv/YWRzLzIwMTgvMTEv/OC1Ib3Vycy1Tb2xp/ZC1TbGVlcC1QZXIt/TmlnaHQtdnMtQ3J5/cHRvLUNyeXB0by1N/ZW1lcy5qcGVn"
+        }
+    }
+}

@@ -1,0 +1,18 @@
+{
+    "title": "Asset Metadata",
+    "type": "object",
+    "properties": {
+        "name": {
+            "type": "string",
+            "description": "Food < Crypto"
+        },
+        "description": {
+            "type": "string",
+            "description": "What crypto investments is like"
+        },
+        "image": {
+            "type": "string",
+            "description": "https://imgs.search.brave.com/XkFw9h78VPsH0w8MBQvCvi55BqJfyA8dSBNCXYMYS_k/rs:fit:748:746:1/g:ce/aHR0cHM6Ly9zdGVl/bWl0aW1hZ2VzLmNv/bS8weDAvaHR0cHM6/Ly9pLnJlZGQuaXQv/YzQ3aXprczF4OGd6/LmpwZw"
+        }
+    }
+}

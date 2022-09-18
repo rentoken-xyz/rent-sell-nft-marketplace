@@ -1,0 +1,18 @@
+{
+    "title": "Asset Metadata",
+    "type": "object",
+    "properties": {
+        "name": {
+            "type": "string",
+            "description": "Facts"
+        },
+        "description": {
+            "type": "string",
+            "description": "ETH 2.0 merge date finally announced"
+        },
+        "image": {
+            "type": "string",
+            "description": "https://imgs.search.brave.com/eaREZN67TmqxtEh0JhUK7sSvvpHXLsm41tsba3yVpIo/rs:fit:1024:1024:1/g:ce/aHR0cHM6Ly9jb250/ZW50LmNyeXB0b25l/d3MuY29tLmF1L3dw/LWNvbnRlbnQvdXBs/b2Fkcy8yMDIxLzA0/L2Nyd3djd3JxY2h4/LnBuZw"
+        }
+    }
+}
