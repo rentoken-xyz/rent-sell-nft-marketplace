@@ -9,7 +9,7 @@ const config = {
   title: "My Site",
   tagline: "Dinosaurs are cool",
   url: "https://rentoken-xyz.github.io",
-  baseUrl: "/",
+  baseUrl: "/rent-sell-nft-marketplace/",
   onBrokenLinks: "throw",
   onBrokenMarkdownLinks: "warn",
   favicon: "img/favicon.ico",
