@@ -3,10 +3,10 @@ pragma solidity ^0.8.0;
 
 import "@openzeppelin/contracts/access/Ownable.sol";
 import "../utils/OkenV1Errors.sol";
-import "../token/OkenV1Nft.sol";
-import "./interfaces/IOkenV1NftFactory.sol";
+import "../token/OkenV1NftPrivate.sol";
+import "./interfaces/IOkenV1NftFactoryPrivate.sol";
 
-contract OkenV1NftFactory is Ownable, IOkenV1NftFactory {
+contract OkenV1NftFactoryPrivate is Ownable, IOkenV1NftFactoryPrivate {
     //--------------------------------- state variables
 
     // Address of `OkenV1RentMarketplace` contract
@@ -43,7 +43,7 @@ contract OkenV1NftFactory is Ownable, IOkenV1NftFactory {
 
     //--------------------------------- factory functions
 
-    /// @inheritdoc IOkenV1NftFactory
+    /// @inheritdoc IOkenV1NftFactoryPrivate
     function deployNftContract(
         string memory name,
         string memory symbol,
@@ -56,8 +56,8 @@ contract OkenV1NftFactory is Ownable, IOkenV1NftFactory {
         (bool success, ) = _feeRecipient.call{value: msg.value, gas: 2300}("");
         if (!success) revert TransferFailed();
 
-        // deploy new `OkenV1Nft` contract
-        OkenV1Nft nft = new OkenV1Nft(
+        // deploy new `OkenV1NftPrivate` contract
+        OkenV1NftPrivate nft = new OkenV1NftPrivate(
             name,
             symbol,
             _rentMarketplace,
@@ -73,7 +73,7 @@ contract OkenV1NftFactory is Ownable, IOkenV1NftFactory {
         return address(nft);
     }
 
-    /// @inheritdoc IOkenV1NftFactory
+    /// @inheritdoc IOkenV1NftFactoryPrivate
     function addNftContract(address nftContract) external override onlyOwner {
         // require not already added
         if (_exists[nftContract]) revert ContractAlreadyExists(nftContract);
@@ -87,7 +87,7 @@ contract OkenV1NftFactory is Ownable, IOkenV1NftFactory {
         emit NftContractAdded(_msgSender(), nftContract);
     }
 
-    /// @inheritdoc IOkenV1NftFactory
+    /// @inheritdoc IOkenV1NftFactoryPrivate
     function removeNftContract(address nftContract) external override onlyOwner {
         // require contract exists
         if (!_exists[nftContract]) revert ContractNotExists(nftContract);
@@ -99,47 +99,47 @@ contract OkenV1NftFactory is Ownable, IOkenV1NftFactory {
 
     //--------------------------------- accessor functions
 
-    /// @inheritdoc IOkenV1NftFactory
+    /// @inheritdoc IOkenV1NftFactoryPrivate
     function getExists(address nftContract) external view override returns (bool) {
         return _exists[nftContract];
     }
 
-    /// @inheritdoc IOkenV1NftFactory
+    /// @inheritdoc IOkenV1NftFactoryPrivate
     function getRentMarketplace() external view override returns (address) {
         return _rentMarketplace;
     }
 
-    /// @inheritdoc IOkenV1NftFactory
+    /// @inheritdoc IOkenV1NftFactoryPrivate
     function setRentMarketplace(address newRentMarketplace) external override onlyOwner {
         _rentMarketplace = newRentMarketplace;
     }
 
-    /// @inheritdoc IOkenV1NftFactory
+    /// @inheritdoc IOkenV1NftFactoryPrivate
     function getSellMarketplace() external view override returns (address) {
         return _sellMarketplace;
     }
 
-    /// @inheritdoc IOkenV1NftFactory
+    /// @inheritdoc IOkenV1NftFactoryPrivate
     function setSellMarketplace(address newSellMarketplace) external override onlyOwner {
         _sellMarketplace = newSellMarketplace;
     }
 
-    /// @inheritdoc IOkenV1NftFactory
+    /// @inheritdoc IOkenV1NftFactoryPrivate
     function getPlatformFee() external view override returns (uint256) {
         return _platformFee;
     }
 
-    /// @inheritdoc IOkenV1NftFactory
+    /// @inheritdoc IOkenV1NftFactoryPrivate
     function setPlatformFee(uint256 newFee) external override onlyOwner {
         _platformFee = newFee;
     }
 
-    /// @inheritdoc IOkenV1NftFactory
+    /// @inheritdoc IOkenV1NftFactoryPrivate
     function getFeeRecipient() external view override returns (address payable) {
         return _feeRecipient;
     }
 
-    /// @inheritdoc IOkenV1NftFactory
+    /// @inheritdoc IOkenV1NftFactoryPrivate
     function setFeeRecipient(address payable newRecipient) external override onlyOwner {
         _feeRecipient = newRecipient;
     }
