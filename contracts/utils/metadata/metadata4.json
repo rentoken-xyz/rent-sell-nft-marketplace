@@ -1,0 +1,18 @@
+{
+    "title": "Asset Metadata",
+    "type": "object",
+    "properties": {
+        "name": {
+            "type": "string",
+            "description": "Zoo ticket"
+        },
+        "description": {
+            "type": "string",
+            "description": "Visit the ZSL London Zoo"
+        },
+        "image": {
+            "type": "string",
+            "description": "https://imgs.search.brave.com/9YpoxSWUqOBlWyvEhJO1x3qpPm7UMNBXrJrmV4EUqW4/rs:fit:632:225:1/g:ce/aHR0cHM6Ly90c2U0/Lm1tLmJpbmcubmV0/L3RoP2lkPU9JUC5G/NmZaMkNHd1NVNGM0/ZmlNS1FUSUZ3SGFG/aiZwaWQ9QXBp"
+        }
+    }
+}

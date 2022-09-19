@@ -1,0 +1,18 @@
+{
+    "title": "Asset Metadata",
+    "type": "object",
+    "properties": {
+        "name": {
+            "type": "string",
+            "description": "doge"
+        },
+        "description": {
+            "type": "string",
+            "description": "Dogecoin and fiat currencies"
+        },
+        "image": {
+            "type": "string",
+            "description": "https://imgs.search.brave.com/JxZVKPf8Pbn-8FLYU-sfDJcdgjzXLf-9HUZi8mAypJE/rs:fit:720:668:1/g:ce/aHR0cHM6Ly9kb250/Z2V0c2VyaW91cy5j/b20vd3AtY29udGVu/dC91cGxvYWRzLzIw/MjEvMDcvY3J5cHRv/LW1lbWUuanBlZw"
+        }
+    }
+}

@@ -1,0 +1,18 @@
+{
+    "title": "Asset Metadata",
+    "type": "object",
+    "properties": {
+        "name": {
+            "type": "string",
+            "description": "Unlucky"
+        },
+        "description": {
+            "type": "string",
+            "description": "God bless this man"
+        },
+        "image": {
+            "type": "string",
+            "description": "https://imgs.search.brave.com/g-LLv8GKVqBZw3SK7pomG5dYKk_YzOFzaOuMYFlj3qk/rs:fit:700:700:1/g:ce/aHR0cHM6Ly9ibG9j/a2NoYWlubXVmZmlu/LmNvbS9tZW1lLzIw/MTkvMDUvMDgvNzAw/X3doZW4tYnVsbC1y/dW4tYmVnaW5zLmpw/Zw"
+        }
+    }
+}

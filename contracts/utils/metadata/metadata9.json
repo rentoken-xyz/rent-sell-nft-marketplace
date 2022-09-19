@@ -1,0 +1,18 @@
+{
+    "title": "Asset Metadata",
+    "type": "object",
+    "properties": {
+        "name": {
+            "type": "string",
+            "description": "Disappointment"
+        },
+        "description": {
+            "type": "string",
+            "description": "How disappointing it must be :)"
+        },
+        "image": {
+            "type": "string",
+            "description": "https://imgs.search.brave.com/Zwxi0SRPBPH0LyFzcL0HdULFgzDi5G_ScsPMILijDXI/rs:fit:713:572:1/g:ce/aHR0cHM6Ly9tZWRp/YS53b3JrYW5kbW9u/ZXkuY29tLzZmLzcz/LzZmNzNiY2U0MzVl/MTQzNWU4M2M4NzZi/NDM5MTA3OTliLmpw/ZWc"
+        }
+    }
+}
