@@ -83,7 +83,7 @@ contract OkenV1RentMarketplace is Ownable, ReentrancyGuard, IOkenV1RentMarketpla
         // to make rent period start from transaction time
         if (start == 0) start = block.timestamp;
 
-        // require `start` is now or in the future, and `end` can be casted to `uint64`
+        // require `start` is now or in the future, and `end` can be type casted to `uint64`
         _validTimestamps(start, block.timestamp, end, MAX_UINT64);
 
         // require `pricePerSecond` non zero and `payToken` valid
@@ -167,8 +167,8 @@ contract OkenV1RentMarketplace is Ownable, ReentrancyGuard, IOkenV1RentMarketpla
 
         // transfer rented Nft from owner to `address(this)`
         if (nft.ownerOf(tokenId) != address(this)) {
-            nft.transferFrom(owner, address(this), tokenId);
-            _owners[nftAddress][tokenId] = owner;
+            nft.safeTransferFrom(owner, address(this), tokenId);
+            // _owners[nftAddress][tokenId] = owner;
         }
 
         // set user to rent Nft
@@ -244,7 +244,7 @@ contract OkenV1RentMarketplace is Ownable, ReentrancyGuard, IOkenV1RentMarketpla
         uint256 tokenId,
         bytes calldata data
     ) external override returns (bytes4) {
-        // if (operator != address(this)) revert();
+        if (operator != address(this)) revert();
         if (_owners[_msgSender()][tokenId] != address(0)) revert();
         _owners[_msgSender()][tokenId] = from;
         return ON_ERC721_RECEIVED;

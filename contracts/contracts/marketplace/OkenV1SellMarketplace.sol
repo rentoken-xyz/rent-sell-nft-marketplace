@@ -5,25 +5,23 @@ import "@openzeppelin/contracts/security/ReentrancyGuard.sol";
 import "@openzeppelin/contracts/access/Ownable.sol";
 import "@openzeppelin/contracts/token/ERC721/IERC721.sol";
 import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
-import "../token/interfaces/IERC4907.sol";
+// import "../token/interfaces/IERC4907.sol";
 import "./interfaces/IOkenV1SellMarketplace.sol";
 import "../utils/OkenV1Errors.sol";
+import "../address/OkenV1AddressRegistry.sol";
+import "../address/OkenV1TokenRegistry.sol";
 
-contract OkenV1SellMarketplace is
-    Ownable,
-    // ReentrancyGuard,
-    IOkenV1SellMarketplace
-{
+contract OkenV1SellMarketplace is Ownable, ReentrancyGuard, IOkenV1SellMarketplace {
     //--------------------------------- state variables
 
-    // ERC721 contract address -> token id -> Listing
-    mapping(address => mapping(uint256 => Listing)) private _listings;
+    // ERC721 contract address -> token id -> seller -> Listing
+    mapping(address => mapping(uint256 => mapping(address => Listing))) private _listings;
 
     // operator address -> token address -> proceeds
     mapping(address => mapping(address => uint256)) private _proceeds;
 
     // `OkenV1AddressRegistry`
-    address private _addressRegistry;
+    OkenV1AddressRegistry private _addressRegistry;
 
     // Rent fee, 123 = 1.23%, fee <= 10000
     uint16 private _platformFee;
@@ -40,7 +38,7 @@ contract OkenV1SellMarketplace is
         uint16 platformFee,
         address payable feeRecipient
     ) {
-        _addressRegistry = addressRegistry;
+        _addressRegistry = OkenV1AddressRegistry(addressRegistry);
         _platformFee = platformFee;
         _feeRecipient = feeRecipient;
     }
@@ -55,40 +53,141 @@ contract OkenV1SellMarketplace is
 
     //--------------------------------- modifiers
 
-    //--------------------------------- external functions
+    //--------------------------------- marketplace functions
 
     function listItem(
-        address nftAddress,
-        uint256 tokenId,
-        uint256 price,
-        address payToken
-    ) external override {}
+        address nftContract,
+        uint256 nftId,
+        address payToken,
+        uint256 price
+    ) external override {
+        // require is ERC721
+        if (!IERC165(nftContract).supportsInterface(INTERFACE_ID_ERC721))
+            revert InvalidNftAddress(nftContract);
+        // require sender is owner
+        IERC721 nft = IERC721(nftContract);
+        address owner = nft.ownerOf(nftId);
+        if (_msgSender() != owner) revert NotOwner(_msgSender());
+        // require matketplace is allowed
+        if (nft.getApproved(nftId) != address(this) && !nft.isApprovedForAll(owner, address(this)))
+            revert NotApproved(nftContract, nftId);
+        // require not listed
+        if (_listings[nftContract][nftId][owner].price != 0)
+            revert AlreadyListed(nftContract, nftId, owner);
+        // require price strictly positive and pay token is valid
+        _validPayment(price, 1, payToken);
 
-    function buyItem(
-        address nftAddress,
-        uint256 tokenId,
-        address payToken
-    ) external payable override {}
+        _listings[nftContract][nftId][owner] = Listing(owner, payToken, price);
+        emit ItemListed(nftContract, nftId, owner, payToken, price);
+    }
 
-    function updateItem(
-        address nftAddress,
-        uint256 tokenId,
+    function updateListing(
+        address nftContract,
+        uint256 nftId,
         uint256 newPrice,
         address newPayToken
-    ) external override {}
+    ) external override {
+        // require sender is owner
+        address owner = IERC721(nftContract).ownerOf(nftId);
+        if (_msgSender() != owner) revert NotOwner(_msgSender());
+        // require is listed
+        Listing memory listing = _listings[nftContract][nftId][owner];
+        if (listing.price == 0) revert NotListed(nftContract, nftId, owner);
+        // require price and pay token are valid
+        _validPayment(newPrice, 1, newPayToken);
 
-    function cancelItem(address nftAddress, uint256 tokenId) external override {}
+        if (newPrice != listing.price) _listings[nftContract][nftId][owner].price = newPrice;
+        if (newPayToken != listing.payToken)
+            _listings[nftContract][nftId][owner].payToken = newPayToken;
+        emit ListingUpdated(nftContract, nftId, owner, newPayToken, newPrice);
+    }
 
-    function withdrawProceeds(address token) external override {}
+    function buyItem(
+        address nftContract,
+        uint256 nftId,
+        address payToken
+    ) external payable override {
+        // require item is listed
+        address seller = IERC721(nftContract).ownerOf(nftId);
+        address buyer = _msgSender();
+        Listing memory listing = _listings[nftContract][nftId][seller];
+        if (listing.price == 0) revert NotListed(nftContract, nftId, seller);
+        // require pay token same as listing
+        if (payToken != listing.payToken) revert InvalidPayToken(payToken);
 
-    //--------------------------------- accessors
+        // compute price
+        uint256 fees = (listing.price * uint256(_platformFee)) / 10000;
+
+        uint256 amount = listing.payToken == address(0)
+            ? msg.value
+            : IERC20(listing.payToken).allowance(buyer, address(this));
+        _validPayment(amount, listing.price + fees, listing.payToken);
+
+        delete (_listings[nftContract][nftId][seller]);
+
+        if (listing.payToken != address(0)) {
+            bool success = IERC20(listing.payToken).transferFrom(
+                buyer,
+                address(this),
+                listing.price + fees
+            );
+            if (!success) revert TransferFailed();
+        }
+
+        IERC721(nftContract).safeTransferFrom(seller, buyer, nftId);
+        emit ItemSold(nftContract, nftId, seller, buyer, listing.payToken, listing.price + fees);
+    }
+
+    function cancelListing(address nftContract, uint256 nftId) external override {
+        // require listing exists
+        if (_listings[nftContract][nftId][_msgSender()].price == 0)
+            revert NotListed(nftContract, nftId, _msgSender());
+        delete (_listings[nftContract][nftId][_msgSender()]);
+        emit ListingCanceled(nftContract, nftId, _msgSender());
+    }
+
+    function withdrawProceeds(address payToken) external override {
+        address operator = _msgSender();
+        uint256 proceeds = _proceeds[operator][payToken];
+        // require there are proceeds
+        if (proceeds == 0) revert NoProceeds(operator, payToken);
+
+        // set proceeds to zero
+        delete (_proceeds[operator][payToken]);
+
+        // transfer balance and verify
+        if (payToken == address(0)) {
+            (bool success, ) = payable(operator).call{value: proceeds, gas: 2300}("");
+            if (!success) revert TransferFailed();
+        } else {
+            bool success = IERC20(payToken).transferFrom(address(this), operator, proceeds);
+            if (!success) revert TransferFailed();
+        }
+        emit ProceedsWithdrawn(operator, payToken, proceeds);
+    }
+
+    //--------------------------------- internal functions
+
+    function _validPayment(
+        uint256 amount,
+        uint256 minAmount,
+        address payToken
+    ) internal view {
+        if (amount < minAmount) revert InvalidAmount(amount);
+        if (
+            (payToken != address(0)) &&
+            (!IOkenV1TokenRegistry(_addressRegistry.tokenRegistry()).getAuthorized(payToken))
+        ) revert InvalidPayToken(payToken);
+    }
+
+    //--------------------------------- accessor functions
 
     function getAddressRegistry() external view override returns (address) {
-        return _addressRegistry;
+        return address(_addressRegistry);
     }
 
     function setAddressRegistry(address newAddressRegistry) external override onlyOwner {
-        _addressRegistry = newAddressRegistry;
+        _addressRegistry = OkenV1AddressRegistry(newAddressRegistry);
     }
 
     function getFeeRecipient() external view override returns (address) {
@@ -107,21 +206,15 @@ contract OkenV1SellMarketplace is
         _platformFee = newPlatformFee;
     }
 
-    function getListing(address nftAddress, uint256 tokenId)
-        external
-        view
-        override
-        returns (Listing memory)
-    {
-        return _listings[nftAddress][tokenId];
+    function getListing(
+        address nftContract,
+        uint256 nftId,
+        address operator
+    ) external view override returns (Listing memory) {
+        return _listings[nftContract][nftId][operator];
     }
 
-    function getProceeds(address operator, address payToken)
-        external
-        view
-        override
-        returns (uint256)
-    {
-        return _proceeds[operator][payToken];
+    function getProceeds(address operator, address token) external view override returns (uint256) {
+        return _proceeds[operator][token];
     }
 }

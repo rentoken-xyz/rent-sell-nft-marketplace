@@ -162,8 +162,9 @@ interface IOkenV1RentMarketplace is IERC721Receiver {
 
     function withdrawProceeds(address token) external;
 
-    //--------------------------------- accessors
+    //--------------------------------- accessor functions
 
+    /// @notice Returns the owner of the NFT
     function ownerOf(address nftAddress, uint256 tokenId) external view returns (address);
 
     /// @return Item listing
