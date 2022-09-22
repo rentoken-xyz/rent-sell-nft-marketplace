@@ -165,7 +165,7 @@ interface IOkenV1RentMarketplace is IERC721Receiver {
     //--------------------------------- accessor functions
 
     /// @notice Returns the owner of the NFT
-    function ownerOf(address nftAddress, uint256 tokenId) external view returns (address);
+    function getOwnerOf(address nftAddress, uint256 tokenId) external view returns (address);
 
     /// @return Item listing
     function getListing(
@@ -184,4 +184,8 @@ interface IOkenV1RentMarketplace is IERC721Receiver {
     function getPlatformFee() external view returns (uint16);
 
     function setPlatformFee(uint16 newFee) external;
+
+    function getAddressRegistry() external view returns (address);
+
+    function setAddressRegistry(address newAddressRegistry) external;
 }

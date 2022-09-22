@@ -5,7 +5,6 @@ import "@openzeppelin/contracts/access/Ownable.sol";
 import "../utils/OkenV1Errors.sol";
 import "../token/ERC4907URIStorage.sol";
 import "./interfaces/IOkenV1RentableNft.sol";
-import "../address/interfaces/IOkenV1AddressRegistry.sol";
 
 contract OkenV1RentableNft is ERC4907URIStorage, IOkenV1RentableNft, Ownable {
     //--------------------------------- state variables

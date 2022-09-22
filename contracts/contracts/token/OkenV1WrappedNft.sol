@@ -9,16 +9,22 @@ import "./interfaces/IOkenV1WrappedNft.sol";
 contract OkenV1WrappedNft is ERC4907URIStorage, IOkenV1WrappedNft, Ownable {
     //--------------------------------- state variables
 
+    // address of the `OkenV1RentMarketplace` contract
     address private _rentMarketplace;
 
+    // address of the `OkenV1SellMarketplace` contract
     address private _sellMarketplace;
 
+    // mint fee in WEI
     uint256 private _platformFee;
 
+    // address the fees are transferred to
     address payable private _feeRecipient;
 
+    // ERC721 NFT contract being wrapped
     IERC721Metadata private _originalNftContract;
 
+    // original NFT owners
     mapping(uint256 => address) private _originalOwners;
 
     bytes4 private constant INTERFACE_ID_ERC721_METADATA = 0x5b5e139f;
@@ -34,58 +40,56 @@ contract OkenV1WrappedNft is ERC4907URIStorage, IOkenV1WrappedNft, Ownable {
     ) ERC721(name_, symbol_) {
         _rentMarketplace = rentMarketplace;
         _sellMarketplace = sellMarketplace;
-        _feeRecipient = feeRecipient;
         _platformFee = platformFee;
+        _feeRecipient = feeRecipient;
         _originalNftContract = IERC721Metadata(originalNftContract);
     }
 
-    function mintWrappedNft(uint256 tokenId) external payable override {
-        // check if fees are paid
+    function mint(uint256 nftId) external payable override {
+        // require fees are paid
         if (msg.value < _platformFee) revert InsufficientFunds(_platformFee, msg.value);
 
-        address owner = _originalNftContract.ownerOf(tokenId);
-        if (
-            owner != _msgSender() &&
-            _originalNftContract.getApproved(tokenId) != _msgSender() &&
-            !_originalNftContract.isApprovedForAll(owner, _msgSender())
-        ) {
+        // require `msg.sender` is owner or approved or approved for all
+        address owner = _originalNftContract.ownerOf(nftId);
+        address operator = _msgSender();
+        if (owner != operator && !isApproved(nftId, operator))
             revert NotOwnerNorApproved(_msgSender());
-        }
 
         // send fees to fee recipient
-        (bool success, ) = _feeRecipient.call{value: msg.value}("");
+        (bool success, ) = _feeRecipient.call{value: msg.value, gas: 2300}("");
         if (!success) revert TransferFailed();
 
+        // transfer nft from owner to this contract
+        _originalNftContract.transferFrom(owner, address(this), nftId);
+
+        // mint wrapped nft
         string memory uri = "";
         if (IERC165(address(_originalNftContract)).supportsInterface(INTERFACE_ID_ERC721_METADATA))
-            uri = _originalNftContract.tokenURI(tokenId);
-
-        // transfer nft from owner to this
-        _originalNftContract.transferFrom(owner, address(this), tokenId);
-        _safeMint(owner, tokenId);
-        _setTokenURI(tokenId, uri);
-        emit WrappedNftMinted(tokenId, owner, _msgSender());
+            uri = _originalNftContract.tokenURI(nftId);
+        _safeMint(owner, nftId);
+        _setTokenURI(nftId, uri);
+        emit Minted(nftId, owner, operator);
     }
 
-    function burnWrappedNft(uint256 tokenId) external override {
+    function burn(uint256 nftId) external override {
         address operator = _msgSender();
         // require sender is owner or approved or approved for all
-        if ((operator != ownerOf(tokenId)) && (!isApproved(tokenId, operator)))
-            revert NotOwnerNorApproved(_msgSender());
+        if ((operator != ownerOf(nftId)) && (!isApproved(nftId, operator)))
+            revert NotOwnerNorApproved(operator);
 
         // burn wrapped nft
-        _burn(tokenId); // consider overriding _burn to delete original owner of tokenId
+        _burn(nftId); // consider overriding _burn to delete original owner of nftId
 
         // transfer original nft back to original owner
-        address originalOwner = _originalOwners[tokenId];
-        _originalNftContract.transferFrom(address(this), originalOwner, tokenId);
-        delete (_originalOwners[tokenId]);
-        emit WrappedNftBurned(tokenId, operator, originalOwner);
+        address originalOwner = _originalOwners[nftId];
+        _originalNftContract.safeTransferFrom(address(this), originalOwner, nftId);
+        delete (_originalOwners[nftId]);
+        emit Burned(nftId, originalOwner, operator);
     }
 
     /// @dev Check if `operator` is either approved for all or for the single token ID
-    function isApproved(uint256 tokenId, address operator) public view override returns (bool) {
-        return isApprovedForAll(ownerOf(tokenId), operator) || getApproved(tokenId) == operator;
+    function isApproved(uint256 nftId, address operator) public view override returns (bool) {
+        return isApprovedForAll(ownerOf(nftId), operator) || getApproved(nftId) == operator;
     }
 
     /// @dev Override `isApprovedForAll()` to whitelist Oken contracts to enable gas-less listings
@@ -95,51 +99,62 @@ contract OkenV1WrappedNft is ERC4907URIStorage, IOkenV1WrappedNft, Ownable {
     }
 
     /// @dev Override `_isApprovedOrOwner()` to whitelist Oken contracts to enable gas-less listings
-    function _isApprovedOrOwner(address spender, uint256 tokenId)
+    function _isApprovedOrOwner(address spender, uint256 nftId)
         internal
         view
         override
         returns (bool)
     {
-        if (!_exists(tokenId)) revert NotExists(tokenId);
-        address owner = ERC721.ownerOf(tokenId);
+        if (!_exists(nftId)) revert NotExists(nftId);
+        address owner = ERC721.ownerOf(nftId);
         if (isApprovedForAll(owner, spender)) return true;
-        return super._isApprovedOrOwner(spender, tokenId);
+        return super._isApprovedOrOwner(spender, nftId);
     }
 
     //--------------------------------- accessors
 
+    /// @inheritdoc IOkenV1WrappedNft
+    function getExists(uint256 nftId) external view override returns (bool) {
+        return _exists(nftId);
+    }
+
+    /// @inheritdoc IOkenV1WrappedNft
     function getRentMarketplace() external view override returns (address) {
         return _rentMarketplace;
     }
 
+    /// @inheritdoc IOkenV1WrappedNft
     function getSellMarketplace() external view override returns (address) {
         return _sellMarketplace;
     }
 
+    /// @inheritdoc IOkenV1WrappedNft
     function getPlatformFee() external view override returns (uint256) {
         return _platformFee;
     }
 
-    function setPlatformFee(uint256 fee) external override onlyOwner {
-        _platformFee = fee;
-        emit PlatformFeeUpdated(fee);
+    /// @inheritdoc IOkenV1WrappedNft
+    function setPlatformFee(uint256 newFee) external override onlyOwner {
+        _platformFee = newFee;
+        emit PlatformFeeUpdated(newFee);
     }
 
+    /// @inheritdoc IOkenV1WrappedNft
     function getFeeRecipient() external view override returns (address payable) {
         return _feeRecipient;
     }
 
-    function setFeeRecipient(address payable recipient) external override onlyOwner {
-        _feeRecipient = recipient;
-        emit FeeRecipientUpdated(recipient);
+    /// @inheritdoc IOkenV1WrappedNft
+    function setFeeRecipient(address payable newRecipient) external override onlyOwner {
+        _feeRecipient = newRecipient;
+        emit FeeRecipientUpdated(newRecipient);
     }
 
     function getOriginalNftContract() external view override returns (address) {
         return address(_originalNftContract);
     }
 
-    function originalOwnerOf(uint256 tokenId) external view override returns (address) {
-        return _originalOwners[tokenId];
+    function getOriginalOwnerOf(uint256 nftId) external view override returns (address) {
+        return _originalOwners[nftId];
     }
 }
