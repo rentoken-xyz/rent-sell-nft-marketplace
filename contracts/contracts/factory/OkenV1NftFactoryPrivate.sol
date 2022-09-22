@@ -52,6 +52,7 @@ contract OkenV1NftFactoryPrivate is Ownable, IOkenV1NftFactoryPrivate {
     ) external payable override returns (address) {
         // require fees are paid
         if (msg.value < _platformFee) revert InsufficientFunds(_platformFee, msg.value);
+
         // send fees to fee recipient
         (bool success, ) = _feeRecipient.call{value: msg.value, gas: 2300}("");
         if (!success) revert TransferFailed();

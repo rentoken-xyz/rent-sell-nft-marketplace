@@ -53,8 +53,9 @@ contract OkenV1RentableNftFactoryPrivate is Ownable, IOkenV1RentableNftFactoryPr
     ) external payable override returns (address) {
         // require fees are paid
         if (msg.value < _platformFee) revert InsufficientFunds(_platformFee, msg.value);
+
         // send fees to fee recipient
-        (bool success, ) = _feeRecipient.call{value: msg.value}("");
+        (bool success, ) = _feeRecipient.call{value: msg.value, gas: 2300}("");
         if (!success) revert TransferFailed();
 
         // deploy new `OkenV1RentableNftPrivate` contract
