@@ -5,6 +5,7 @@ import { network, deployments, ethers } from "hardhat";
 import { developmentChains, networkConfig } from "../../../utils/const";
 import { OkenV1TokenRegistry } from "../../../typechain-types";
 
+/*
 !developmentChains.includes(network.name)
   ? describe.skip
   : describe.skip("OkenV1TokenRegistry unit tests", function () {
@@ -56,3 +57,4 @@ import { OkenV1TokenRegistry } from "../../../typechain-types";
         await expect(rentokenV1TokenRegistry.remove(token)).to.be.revertedWith(error);
       });
     });
+*/

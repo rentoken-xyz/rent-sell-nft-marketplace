@@ -9,24 +9,25 @@ import "./interfaces/IOkenV1NftFactory.sol";
 contract OkenV1NftFactory is Ownable, IOkenV1NftFactory {
     //--------------------------------- state variables
 
-    /// @notice Address of `OkenV1RentMarketplace` contract
+    // Address of `OkenV1RentMarketplace` contract
     address private _rentMarketplace;
 
-    /// @notice Address of `OkenV1SellMarketplace` contract
+    // Address of `OkenV1SellMarketplace` contract
     address private _sellMarketplace;
 
-    /// @notice Platform fee for deploying a new Nft Contract
+    // Fee to deploy a `OkenV1RentableNft` contract
     uint256 private _platformFee;
 
-    /// @notice Platform fee recipient
+    // Address the fees are transferred to
     address payable _feeRecipient;
 
-    /// @notice Nft address -> exists
+    // `OkenV1RentableNft` address -> exists in the factory
     mapping(address => bool) private _exists;
 
+    // interface id of ERC721
     bytes4 private constant INTERFACE_ID_ERC721 = 0x80ac58cd;
 
-    //--------------------------------- functions
+    //--------------------------------- constructor
 
     constructor(
         address rentMarketplace,
@@ -40,25 +41,26 @@ contract OkenV1NftFactory is Ownable, IOkenV1NftFactory {
         _platformFee = platformFee;
     }
 
+    //--------------------------------- factory functions
+
+    /// @inheritdoc IOkenV1NftFactory
     function deployNftContract(
-        string memory name_,
-        string memory symbol_,
+        string memory name,
+        string memory symbol,
         uint256 mintFee,
         address payable feeRecipient
     ) external payable override returns (address) {
-        // check if fees are paid
-        if (msg.value < _platformFee) {
-            revert InsufficientFunds(_platformFee, msg.value);
-        }
+        // require fees are paid
+        if (msg.value < _platformFee) revert InsufficientFunds(_platformFee, msg.value);
 
         // send fees to fee recipient
-        (bool success, ) = _feeRecipient.call{value: msg.value}("");
+        (bool success, ) = _feeRecipient.call{value: msg.value, gas: 2300}("");
         if (!success) revert TransferFailed();
 
-        // deploy new Nft contract
+        // deploy new `OkenV1Nft` contract
         OkenV1Nft nft = new OkenV1Nft(
-            name_,
-            symbol_,
+            name,
+            symbol,
             _rentMarketplace,
             _sellMarketplace,
             mintFee,
@@ -68,62 +70,78 @@ contract OkenV1NftFactory is Ownable, IOkenV1NftFactory {
 
         // update exists
         _exists[address(nft)] = true;
-        emit NftAdded(_msgSender(), address(nft));
+        emit NftContractAdded(_msgSender(), address(nft));
         return address(nft);
     }
 
-    function addNftContract(address nft) external override onlyOwner {
-        if (_exists[nft]) revert ContractAlreadyExists(nft);
+    /// @inheritdoc IOkenV1NftFactory
+    function addNftContract(address nftContract) external override onlyOwner {
+        // require not already added
+        if (_exists[nftContract]) revert ContractAlreadyExists(nftContract);
 
-        if (!IERC165(nft).supportsInterface(INTERFACE_ID_ERC721)) {
-            revert InvalidNftAddress(nft);
-        }
+        // check if contract is ERC4907
+        if (!IERC165(nftContract).supportsInterface(INTERFACE_ID_ERC721))
+            revert InvalidNftAddress(nftContract);
 
-        _exists[nft] = true;
-        emit NftAdded(_msgSender(), nft);
+        // update exists
+        _exists[nftContract] = true;
+        emit NftContractAdded(_msgSender(), nftContract);
     }
 
-    function removeNftContract(address nft) external override onlyOwner {
-        if (!_exists[nft]) revert ContractNotExists(nft);
-        _exists[nft] = false;
-        emit NftRemoved(_msgSender(), nft);
+    /// @inheritdoc IOkenV1NftFactory
+    function removeNftContract(address nftContract) external override onlyOwner {
+        // require contract exists
+        if (!_exists[nftContract]) revert ContractNotExists(nftContract);
+
+        // update exists
+        _exists[nftContract] = false;
+        emit NftContractRemoved(_msgSender(), nftContract);
     }
 
-    //--------------------------------- accessors
+    //--------------------------------- accessor functions
 
-    function getExists(address nft) external view override returns (bool) {
-        return _exists[nft];
+    /// @inheritdoc IOkenV1NftFactory
+    function getExists(address nftContract) external view override returns (bool) {
+        return _exists[nftContract];
     }
 
+    /// @inheritdoc IOkenV1NftFactory
     function getRentMarketplace() external view override returns (address) {
         return _rentMarketplace;
     }
 
+    /// @inheritdoc IOkenV1NftFactory
     function setRentMarketplace(address newRentMarketplace) external override onlyOwner {
         _rentMarketplace = newRentMarketplace;
     }
 
+    /// @inheritdoc IOkenV1NftFactory
     function getSellMarketplace() external view override returns (address) {
         return _sellMarketplace;
     }
 
+    /// @inheritdoc IOkenV1NftFactory
     function setSellMarketplace(address newSellMarketplace) external override onlyOwner {
         _sellMarketplace = newSellMarketplace;
     }
 
+    /// @inheritdoc IOkenV1NftFactory
     function getPlatformFee() external view override returns (uint256) {
         return _platformFee;
     }
 
-    function setPlatformFee(uint256 fee) external override onlyOwner {
-        _platformFee = fee;
+    /// @inheritdoc IOkenV1NftFactory
+    function setPlatformFee(uint256 newFee) external override onlyOwner {
+        _platformFee = newFee;
     }
 
+    /// @inheritdoc IOkenV1NftFactory
     function getFeeRecipient() external view override returns (address payable) {
         return _feeRecipient;
     }
 
-    function setFeeRecipient(address payable recipient) external override onlyOwner {
-        _feeRecipient = recipient;
+    /// @inheritdoc IOkenV1NftFactory
+    function setFeeRecipient(address payable newRecipient) external override onlyOwner {
+        _feeRecipient = newRecipient;
     }
 }

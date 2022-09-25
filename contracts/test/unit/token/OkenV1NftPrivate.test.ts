@@ -16,8 +16,8 @@ import {
   Nft_setFeeRecipient,
 } from "./OkenV1Nft";
 
-const deployOkenV1RentableNftFixture: Nft_deploy = async () => {
-  const nftFactory = await ethers.getContractFactory("OkenV1RentableNft");
+const deployOkenV1NftPrivateFixture: Nft_deploy = async () => {
+  const nftFactory = await ethers.getContractFactory("OkenV1NftPrivate");
   const [deployer, minter, user] = await ethers.getSigners();
 
   const args: Nft_args = [
@@ -36,12 +36,12 @@ const deployOkenV1RentableNftFixture: Nft_deploy = async () => {
 
 !developmentChains.includes(network.name)
   ? describe.skip
-  : describe("OkenV1RentableNft unit tests", function () {
-      Nft_constructor(deployOkenV1RentableNftFixture);
-      Nft_mint(deployOkenV1RentableNftFixture, true, false);
-      Nft_burn(deployOkenV1RentableNftFixture);
-      Nft_isApproved(deployOkenV1RentableNftFixture);
-      Nft_isApprovedForAll(deployOkenV1RentableNftFixture);
-      Nft_setPlatformFee(deployOkenV1RentableNftFixture);
-      Nft_setFeeRecipient(deployOkenV1RentableNftFixture);
+  : describe("OkenV1NftPrivate unit tests", function () {
+      Nft_constructor(deployOkenV1NftPrivateFixture);
+      Nft_mint(deployOkenV1NftPrivateFixture, false, true);
+      Nft_burn(deployOkenV1NftPrivateFixture);
+      Nft_isApproved(deployOkenV1NftPrivateFixture);
+      Nft_isApprovedForAll(deployOkenV1NftPrivateFixture);
+      Nft_setPlatformFee(deployOkenV1NftPrivateFixture);
+      Nft_setFeeRecipient(deployOkenV1NftPrivateFixture);
     });

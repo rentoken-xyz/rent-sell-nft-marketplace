@@ -1,9 +1,9 @@
-import { developmentChains, VERIFICATION_BLOCK_CONFIRMATIONS } from "../../../utils/const";
-import verify from "../../../utils/verify";
+import { developmentChains, VERIFICATION_BLOCK_CONFIRMATIONS } from "../../utils/const";
+import verify from "../../utils/verify";
 import { DeployFunction } from "hardhat-deploy/types";
 import { HardhatRuntimeEnvironment } from "hardhat/types";
 
-const deployAddressRegistry: DeployFunction = async function (hre: HardhatRuntimeEnvironment) {
+const deployBasicERC721: DeployFunction = async function (hre: HardhatRuntimeEnvironment) {
     const { deployments, getNamedAccounts, network } = hre;
     const { deploy } = deployments;
     const { deployer } = await getNamedAccounts();
@@ -11,8 +11,8 @@ const deployAddressRegistry: DeployFunction = async function (hre: HardhatRuntim
         ? 1
         : VERIFICATION_BLOCK_CONFIRMATIONS;
 
-    const args: [] = [];
-    const addressRegistry = await deploy("OkenV1AddressRegistry", {
+    const args: any[] = [];
+    const basicERC721 = await deploy("BasicERC721", {
         from: deployer,
         args: args,
         log: true,
@@ -21,9 +21,9 @@ const deployAddressRegistry: DeployFunction = async function (hre: HardhatRuntim
 
     // Verify the deployment
     if (!developmentChains.includes(network.name) && process.env.ETHERSCAN_API_KEY) {
-        await verify(addressRegistry.address, args);
+        await verify(basicERC721.address, args);
     }
 };
 
-export default deployAddressRegistry;
-deployAddressRegistry.tags = ["test", "testAddressRegistry"];
+export default deployBasicERC721;
+deployBasicERC721.tags = ["basicERC721", "test"];

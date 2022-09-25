@@ -50,10 +50,9 @@ contract OkenV1Nft is ERC721URIStorage, IOkenV1Nft, Ownable {
         if (msg.value < _platformFee) revert InsufficientFunds(_platformFee, msg.value);
 
         // mint new token
-        uint256 tokenId = _tokenCounter;
+        uint256 tokenId = _tokenCounter++;
         _safeMint(to, tokenId);
         _setTokenURI(tokenId, uri);
-        _tokenCounter += 1;
 
         // send fee to fee recipient
         (bool success, ) = _feeRecipient.call{value: msg.value, gas: 2300}("");

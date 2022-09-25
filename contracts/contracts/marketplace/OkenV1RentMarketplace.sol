@@ -38,13 +38,13 @@ contract OkenV1RentMarketplace is Ownable, ReentrancyGuard, IOkenV1RentMarketpla
     //--------------------------------- misc functions
 
     constructor(
-        address addressRegistry,
         uint16 platformFee,
-        address payable feeRecipient
+        address payable feeRecipient,
+        address addressRegistry
     ) {
-        _addressRegistry = IOkenV1AddressRegistry(addressRegistry);
         _platformFee = platformFee;
         _feeRecipient = feeRecipient;
+        _addressRegistry = IOkenV1AddressRegistry(addressRegistry);
     }
 
     receive() external payable {
@@ -131,7 +131,7 @@ contract OkenV1RentMarketplace is Ownable, ReentrancyGuard, IOkenV1RentMarketpla
         address payToken
     ) external payable override nonReentrant {
         IERC721 nft = IERC721(nftAddress);
-        address owner = ownerOf(nftAddress, tokenId);
+        address owner = getOwnerOf(nftAddress, tokenId);
         address renter = _msgSender();
         Listing memory listing = _listings[nftAddress][tokenId][owner];
         // require item is listed
@@ -186,7 +186,7 @@ contract OkenV1RentMarketplace is Ownable, ReentrancyGuard, IOkenV1RentMarketpla
         if (IERC4907(nftAddress).userOf(tokenId) != address(0))
             revert CurrentlyRented(nftAddress, tokenId);
         // require sender is original owner
-        address owner = ownerOf(nftAddress, tokenId);
+        address owner = getOwnerOf(nftAddress, tokenId);
         if (owner != _msgSender()) revert NotOwner(_msgSender());
 
         // transfer nft back to original owner
@@ -276,7 +276,12 @@ contract OkenV1RentMarketplace is Ownable, ReentrancyGuard, IOkenV1RentMarketpla
 
     //--------------------------------- accessors
 
-    function ownerOf(address nftAddress, uint256 tokenId) public view override returns (address) {
+    function getOwnerOf(address nftAddress, uint256 tokenId)
+        public
+        view
+        override
+        returns (address)
+    {
         address owner = IERC721(nftAddress).ownerOf(tokenId);
         if (owner != address(this)) return owner;
         return _owners[nftAddress][tokenId];
@@ -313,5 +318,13 @@ contract OkenV1RentMarketplace is Ownable, ReentrancyGuard, IOkenV1RentMarketpla
 
     function setPlatformFee(uint16 newPlatformFee) external override onlyOwner {
         _platformFee = newPlatformFee;
+    }
+
+    function getAddressRegistry() external view override returns (address) {
+        return address(_addressRegistry);
+    }
+
+    function setAddressRegistry(address newAddressRegistry) external override onlyOwner {
+        _addressRegistry = IOkenV1AddressRegistry(newAddressRegistry);
     }
 }
